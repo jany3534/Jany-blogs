@@ -1,0 +1,235 @@
+// simple example 
+
+function createElement(tag, attrs, children) {
+  var elem = $('<' + tag + '>');
+  for (var key in attrs) {
+    var val = attrs[key];
+    if (key.indexOf('on') === 0) {
+      var event = key.substr(2).toLowerCase();
+      elem.on(event, val)
+    } else {
+      elem.attr(key, val);
+    }
+  }
+  return elem.html(children);
+}
+
+function ItemRow(props) {
+  var className = props.completed ? ' item completed' : 'item';
+  return createElement('li', {
+    id: props.id,
+    class: className,
+    onClick: props.onUpdate.bind(null, props.id)
+  }, props.text);
+}
+
+
+function extending(base, item) {
+  return $.extend({}, item, base);
+}
+//
+
+function ItemsList(props) {
+  return createElement('ul', {}, props.items.map(extending.bind(null, {
+    onUpdate: props.onUpdate
+  })).map(ItemRow));
+}
+
+function SearchBar(props) {
+  function onButtonClick(e) {
+    var val = $('#input').val();
+    props.update(val);
+    $('#input').val('');
+    e.preventDefault();
+  }
+
+  var input = createElement('input', {
+    id: 'input'
+  });
+  var button = createElement('button', {
+    id: 'add',
+    onClick: onButtonClick.bind(null)
+  }, 'Add');
+
+  return createElement('div', {
+    class: 'serach-bar'
+  }, [input, button]);
+}
+
+function App(props) {
+  function getInitialState(props) {
+    return {
+      items: [],
+      id: 0
+    }
+  }
+
+  var _state = getInitialState(),
+    _node = null;
+
+  function setState(state) {
+    _state = state;
+    render();
+  }
+
+  function updateSearchState(value) {
+    _state.items.push({
+      id: _state.id++,
+      text: value,
+      completed: false
+    });
+    setState(_state);
+  }
+
+  function updateState(toggleId) {
+    _state.items.forEach(function(el) {
+      if (el.id === toggleId) {
+        el.completed = !el.completed;
+      }
+    });
+    setState(_state);
+  }
+
+  // naive implementation of render...
+  function render() {
+    var children = [SearchBar({
+      update: updateSearchState
+    }), ItemsList({
+      items: _state.items,
+      onUpdate: updateState
+    })];
+    if (!_node) {
+      return _node = createElement('div', {
+        class: 'main'
+      }, children);
+    } else {
+      return _node.html(children);
+    }
+  }
+
+  return render();
+}
+var defaultProp = {
+    getInitialState: function(props) {
+      return {
+        items: [],
+        id: 0
+      }
+    },
+
+    // _state: {},
+    // _node: null;
+
+    setState: function(state) {
+      this._state = state;
+      render();
+    }
+  }
+  // 1111111111111111
+var classApp = function(props) {
+  // this._state = this.getInitialState(props) || {};
+  var classAppProp = extending(defaultProp, {
+    updateSearchState: function(value) {
+      this._state.items.push({
+        id: this._state.id++,
+        text: value,
+        completed: false
+      });
+      setState(this._state);
+    },
+    updateState: function(toggleId) {
+      this._state.items.forEach(function(el) {
+        if (el.id === toggleId) {
+          el.completed = !el.completed;
+        }
+      });
+      setState(this._state);
+    },
+
+    render: function() {
+      console.log('11111ssss11');
+      var children = [
+        SearchBar({
+          update: this.updateSearchState
+        }),
+        ItemsList({
+          items: this._state.items,
+          onUpdate: this.updateState
+        })
+      ]
+      return createElement('div', {
+        class: 'top'
+      }, children)
+    }
+  });
+  classAppProp._state= classAppProp.getInitialState(props) || {};
+  return classAppProp;
+}
+var classApp1 = function(props) {
+  // this._state = this.getInitialState(props) || {};
+  function updateSearchState(value) {
+    _state.items.push({
+      id: _state.id++,
+      text: value,
+      completed: false
+    });
+    setState(_state);
+  }
+  function updateState(toggleId) {
+    _state.items.forEach(function(el) {
+      if (el.id === toggleId) {
+        el.completed = !el.completed;
+      }
+    });
+    setState(_state);
+  }
+
+  function render() {
+    console.log('11111sssdddssd11ssss11');
+    var children = [
+      SearchBar({
+        updateSearchState: this.updateSearchState
+      }),
+      ItemsList({
+        items: this._state.items,
+        onUpdate: this.updateState
+      })
+    ]
+    return createElement('div', {
+      class: 'top'
+    }, children)
+  }
+  var _state = getInitialState(props) || {};
+  return {
+    _state,
+    updateSearchState,
+    updateState,
+    render
+
+  }
+}
+
+// classApp = extending(classApp, classAppProp);
+// classApp.prototype = extending(classApp.prototype, classAppProp);
+// classApp.prototype = extending(classApp.prototype, defaultProp);
+
+function createClass(classAi, props) {
+  var _node = null;
+  var classA = new classAi(props);
+  if (!classA.render) return null
+
+  var children = classA.render()
+  if (!_node) {
+    return _node = createElement('div', {
+      class: 'main'
+    }, children);
+  } else {
+    return _node.html(children);
+  }
+}
+
+function render(component, node) {
+  node.empty().append(component);
+}
+
+render(createClass(classApp, {}), $('#app'));
